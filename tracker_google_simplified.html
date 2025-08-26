@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Prep Tracker — Simplified</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+:root{
+  --bg:#0f1115; --card:#111318; --muted:#9aa0a6;
+  --accent1:#ff8a00; --accent2:#ff4db2; --accent3:#9b7bff; --accent4:#20e3b2;
+  --glass: rgba(255,255,255,0.03);
+}
+*{box-sizing:border-box;font-family:"Inter",system-ui,Segoe UI,Roboto}
+html,body{height:100%;margin:0;background:linear-gradient(180deg,#0b0c0f,#0f1115);color:#e6eef6}
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));backdrop-filter: blur(4px)}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:46px;height:46px;border-radius:10px;background:linear-gradient(135deg,var(--accent1),var(--accent3));display:flex;align-items:center;justify-content:center;font-weight:800;color:#0b0c0f}
+h1{margin:0}
+nav{display:flex;gap:8px}
+.nav-btn{background:transparent;border:none;color:var(--muted);padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600}
+.nav-btn.active{background:linear-gradient(90deg, rgba(255,255,255,0.025), rgba(255,255,255,0.01));color:#fff}
+.container{max-width:960px;margin:20px auto;padding:12px}
+.grid{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:880px){ .grid{grid-template-columns:420px 1fr} }
+.card{background:linear-gradient(180deg,var(--card), rgba(255,255,255,0.01));padding:14px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,0.6);border:1px solid rgba(255,255,255,0.02)}
+.muted{color:var(--muted);font-size:13px}
+label{display:block;font-size:13px;margin-top:8px;color:var(--muted)}
+input[type=number], input[type=date]{width:100%;padding:10px;border-radius:8px;border:none;background:var(--glass);color:#fff;margin-top:6px;font-size:15px}
+.row{display:flex;gap:8px;align-items:center}
+.small{width:90px}
+.chip{background:rgba(255,255,255,0.03);padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);cursor:pointer;font-weight:600}
+.save-btn{background:linear-gradient(90deg,var(--accent4),#68ffd2);border:none;padding:10px 14px;border-radius:10px;color:#061217;font-weight:800;cursor:pointer;margin-top:10px}
+.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:var(--muted);cursor:pointer}
+.stat-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.stat{flex:1;min-width:140px;background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));padding:12px;border-radius:10px;text-align:center}
+.chart-wrap{height:280px}
+.badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.badge{padding:6px 8px;border-radius:8px;background:linear-gradient(90deg,#111318, rgba(255,255,255,0.02));border:1px solid rgba(255,255,255,0.02);font-weight:700;color:#fff}
+.hint{font-size:12px;color:var(--muted);margin-top:8px}
+.small-txt{font-size:12px;color:var(--muted)}
+.top-right{display:flex;gap:8px;align-items:center}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">P</div>
+    <div>
+      <h1>Prep Tracker</h1>
+      <div class="muted">Welcome Back, Champion! — Track daily Qs</div>
+    </div>
+  </div>
+
+  <div class="top-right">
+    <nav>
+      <button class="nav-btn active" data-section="home">Home</button>
+      <button class="nav-btn" data-section="weekly">Weekly Analysis</button>
+      <button class="nav-btn" data-section="monthly">Monthly Analysis</button>
+      <button class="nav-btn" data-section="settings">Settings</button>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <div class="grid">
+    <!-- LEFT: Input + Stats -->
+    <div>
+      <div id="home" class="card section" style="display:block">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <h2 style="margin:0">Today • <span id="todayDate"></span></h2>
+            <div class="muted">How many questions did you do today?</div>
+          </div>
+          <div style="text-align:right">
+            <div class="small-txt">Daily Goal</div>
+            <div style="font-weight:800;font-size:18px" id="dailyGoalDisplay">150</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <label>Pick Date (edit past)</label>
+          <input type="date" id="entryDate">
+        </div>
+
+        <div style="margin-top:10px">
+          <label>Physics</label>
+          <div class="row">
+            <input id="physics" type="number" min="0" value="0" class="small">
+            <div style="display:flex;gap:6px">
+              <div class="chip" onclick="quickAdd('physics',5)">+5</div>
+              <div class="chip" onclick="quickAdd('physics',10)">+10</div>
+            </div>
+          </div>
+
+          <label>Chemistry</label>
+          <div class="row">
+            <input id="chemistry" type="number" min="0" value="0" class="small">
+            <div style="display:flex;gap:6px">
+              <div class="chip" onclick="quickAdd('chemistry',5)">+5</div>
+              <div class="chip" onclick="quickAdd('chemistry',10)">+10</div>
+            </div>
+          </div>
+
+          <label>Math</label>
+          <div class="row">
+            <input id="math" type="number" min="0" value="0" class="small">
+            <div style="display:flex;gap:6px">
+              <div class="chip" onclick="quickAdd('math',5)">+5</div>
+              <div class="chip" onclick="quickAdd('math',10)">+10</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
+            <button class="save-btn" onclick="saveToday()">Save</button>
+            <button class="ghost" onclick="clearToday()">Clear</button>
+            <div style="margin-left:auto;text-align:right">
+              <div class="muted">Total Today</div>
+              <div style="font-weight:800;font-size:18px" id="totalToday">0</div>
+            </div>
+          </div>
+
+          <div class="hint">Auto-save enabled. Edit any past date with the date picker.</div>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat"><h4 id="weekTotal">0</h4><p>Weekly Total</p></div>
+          <div class="stat"><h4 id="monthTotal">0</h4><p>Monthly Total</p></div>
+          <div class="stat"><h4 id="streakCount">0</h4><p>Current Streak (days)</p></div>
+          <div class="stat"><h4 id="allTime">0</h4><p>All-time Total</p></div>
+        </div>
+
+        <div style="margin-top:10px">
+          <div class="muted">Badges</div>
+          <div class="badges" id="badgesArea"></div>
+        </div>
+      </div>
+
+      <!-- Settings -->
+      <div id="settings" class="card section" style="display:none">
+        <h3>Settings</h3>
+        <div style="margin-top:12px">
+          <label>Daily Goal (questions)</label>
+          <input id="dailyGoal" type="number" min="0" value="150">
+        </div>
+
+        <div style="margin-top:12px">
+          <h4>Export / Import</h4>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="save-btn" onclick="exportCSV()">Export CSV</button>
+            <label class="ghost" style="padding:8px 10px;cursor:pointer">
+              Import CSV
+              <input id="csvFile" type="file" accept=".csv" style="display:none" onchange="importCSV(event)">
+            </label>
+            <button class="ghost" onclick="resetAll()">Reset All Data</button>
+          </div>
+          <div class="hint">CSV format: key_date,iso,physics,chemistry,math,total</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Analysis -->
+    <div>
+      <div id="weekly" class="card section" style="display:none">
+        <h3>Weekly Analysis</h3>
+        <div class="chart-wrap"><canvas id="weeklyChart"></canvas></div>
+        <div class="stat-row" style="margin-top:12px">
+          <div class="stat"><h4 id="wPhy">0</h4><p>Total Physics (week)</p></div>
+          <div class="stat"><h4 id="wChem">0</h4><p>Total Chemistry (week)</p></div>
+          <div class="stat"><h4 id="wMath">0</h4><p>Total Math (week)</p></div>
+          <div class="stat"><h4 id="wSum">0</h4><p>Overall (week)</p></div>
+        </div>
+      </div>
+
+      <div id="monthly" class="card section" style="display:none">
+        <h3>Monthly Analysis</h3>
+        <div class="chart-wrap"><canvas id="monthlyChart"></canvas></div>
+        <div class="stat-row" style="margin-top:12px">
+          <div class="stat"><h4 id="mPhy">0</h4><p>Total Physics (month)</p></div>
+          <div class="stat"><h4 id="mChem">0</h4><p>Total Chemistry (month)</p></div>
+          <div class="stat"><h4 id="mMath">0</h4><p>Total Math (month)</p></div>
+          <div class="stat"><h4 id="mSum">0</h4><p>Overall (month)</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ---------- Local Storage helpers ---------- */
+const STORAGE_KEY = 'prep_tracker_v1';
+const BADGES_KEY = 'prep_tracker_badges_v1';function readData(){ return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+function writeData(obj){ localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }
+function readBadges(){ return JSON.parse(localStorage.getItem(BADGES_KEY) || '[]'); }
+function writeBadges(arr){ localStorage.setItem(BADGES_KEY, JSON.stringify(arr)); }
+
+function isoDateFromInput(inputDate){ if(!inputDate) return (new Date()).toISOString(); const d=new Date(inputDate); return d.toISOString(); }
+function niceKeyFromISO(iso){ const d=new Date(iso); return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
+
+/* ---------- UI Init ---------- */
+const today = new Date();
+document.getElementById('todayDate').innerText = today.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+document.getElementById('entryDate').value = today.toISOString().slice(0,10);
+document.getElementById('dailyGoal').value = localStorage.getItem('dailyGoal') || 150;
+document.getElementById('dailyGoalDisplay').innerText = document.getElementById('dailyGoal').value;
+
+document.querySelectorAll('.nav-btn').forEach(b=>{
+  b.addEventListener('click', (e)=>{
+    document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
+    e.currentTarget.classList.add('active');
+    const sec = e.currentTarget.dataset.section;
+    document.querySelectorAll('.section').forEach(s=>s.style.display='none');
+    document.getElementById(sec).style.display='block';
+    if(sec==='weekly') drawWeekly();
+    if(sec==='monthly') drawMonthly();
+  });
+});
+
+document.getElementById('dailyGoal').addEventListener('change', ()=>{
+  localStorage.setItem('dailyGoal', document.getElementById('dailyGoal').value || 0);
+  document.getElementById('dailyGoalDisplay').innerText = document.getElementById('dailyGoal').value || 0;
+});
+
+/* ---------- Quick add ---------- */
+function quickAdd(field,n){ const el=document.getElementById(field); el.value=(parseInt(el.value)||0)+n; autoSaveDraft(); }
+
+/* ---------- Save / Load ---------- */
+function saveToday(){
+  const dateInput = document.getElementById('entryDate').value;
+  const iso = isoDateFromInput(dateInput);
+  const key = niceKeyFromISO(iso);
+  const phy = Math.max(0, parseInt(document.getElementById('physics').value) || 0);
+  const chem = Math.max(0, parseInt(document.getElementById('chemistry').value) || 0);
+  const math = Math.max(0, parseInt(document.getElementById('math').value) || 0);
+  const total = phy + chem + math;
+  const data = readData();
+  data[key] = { physics:phy, chemistry:chem, math:math, total: total, iso: iso };
+  writeData(data);
+  updateUI();
+  giveBadgesIfNeeded();
+  alert('Saved ✅');
+}
+
+function autoSaveDraft(){
+  const dateInput = document.getElementById('entryDate').value;
+  const iso = isoDateFromInput(dateInput);
+  const key = niceKeyFromISO(iso);
+  const phy = Math.max(0, parseInt(document.getElementById('physics').value) || 0);
+  const chem = Math.max(0, parseInt(document.getElementById('chemistry').value) || 0);
+  const math = Math.max(0, parseInt(document.getElementById('math').value) || 0);
+  const total = phy + chem + math;
+  const data = readData();
+  data[key] = { physics:phy, chemistry:chem, math:math, total: total, iso: iso };
+  writeData(data);
+  updateUI(false);
+}
+
+function clearToday(){ 
+  document.getElementById('physics').value=0; 
+  document.getElementById('chemistry').value=0; 
+  document.getElementById('math').value=0; 
+  autoSaveDraft(); 
+}
+
+/* ---------- Update UI and stats ---------- */
+let weeklyChart=null, monthlyChart=null;
+function updateUI(showAlert=true){
+  const data = readData();
+  const now = new Date();
+
+  let weekTotal=0, monthTotal=0, allTotal=0;
+  for(let k in data){
+    const entry = data[k];
+    allTotal += entry.total || 0;
+    const entryDate = new Date(entry.iso || new Date());
+    const diff = (now - entryDate)/(1000*60*60*24);
+    if(diff < 7) weekTotal += entry.total || 0;
+    if(entryDate.getMonth() === now.getMonth() && entryDate.getFullYear() === now.getFullYear()) monthTotal += entry.total || 0;
+  }
+  document.getElementById('weekTotal').innerText = weekTotal;
+  document.getElementById('monthTotal').innerText = monthTotal;
+  document.getElementById('allTime').innerText = allTotal;
+
+  const todayKey = niceKeyFromISO(isoDateFromInput(document.getElementById('entryDate').value));
+  const todayEntry = data[todayKey] || {physics:0,chemistry:0,math:0,total:0};
+  document.getElementById('physics').value = todayEntry.physics || 0;
+  document.getElementById('chemistry').value = todayEntry.chemistry || 0;
+  document.getElementById('math').value = todayEntry.math || 0;
+  document.getElementById('totalToday').innerText = todayEntry.total || 0;
+
+  document.getElementById('streakCount').innerText = calcStreak(data);
+  renderBadges();
+
+  if(document.getElementById('weekly').style.display !== 'none') drawWeekly();
+  if(document.getElementById('monthly').style.display !== 'none') drawMonthly();
+}
+
+/* ---------- Streak and badges ---------- */
+function calcStreak(data){
+  const today = new Date();
+  let count=0;
+  for(let i=0;i<365;i++){
+    const d=new Date(); d.setDate(today.getDate()-i);
+    const key = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+    if(data[key] && (data[key].total>0)) count++; else break;
+  }
+  return count;
+}
+
+function giveBadgesIfNeeded(){
+  const badges = readBadges();
+  const data = readData();
+  let allTotal=0;
+  for(let k in data) allTotal += data[k].total || 0;
+  const possible=[];
+  if(allTotal >= 500 && !badges.includes('500')) possible.push('500');
+  if(allTotal >= 1000 && !badges.includes('1000')) possible.push('1000');
+  if(calcStreak(data) >= 7 && !badges.includes('7day')) possible.push('7day');
+  if(calcStreak(data) >= 30 && !badges.includes('30day')) possible.push('30day');
+  if(possible.length){ possible.forEach(b=>badges.push(b)); writeBadges(badges); alert('New badge(s): '+possible.join(',')); renderBadges(); }
+}
+
+function renderBadges(){
+  const area=document.getElementById('badgesArea'); area.innerHTML='';
+  const badges=readBadges();
+  if(badges.length===0){ area.innerHTML='<div class="muted">No badges yet — keep grinding!</div>'; return; }
+  badges.forEach(b=>{
+    let label=b; 
+    if(b==='500') label='500 Qs'; 
+    if(b==='1000') label='1000 Qs'; 
+    if(b==='7day') label='7-day streak'; 
+    if(b==='30day') label='30-day streak'; 
+    const el=document.createElement('div'); el.className='badge'; el.innerText=label; 
+    area.appendChild(el); 
+  });
+}
+
+/* ---------- Charts ---------- */
+function drawWeekly(){
+  const data = readData(); const now=new Date();
+  const labels=[]; const phyArr=[], chemArr=[], mathArr=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date(now); d.setDate(now.getDate()-i);
+    const lab = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+    labels.push(lab);
+    const key = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+    const entry = data[key] || {physics:0,chemistry:0,math:0};
+    phyArr.push(entry.physics); chemArr.push(entry.chemistry); mathArr.push(entry.math);
+  }
+  if(weeklyChart) weeklyChart.destroy();
+  weeklyChart = new Chart(document.getElementById('weeklyChart'), {
+    type:'bar',
+    data:{ labels:labels,
+      datasets:[
+        {label:'Physics',data:phyArr},
+        {label:'Chemistry',data:chemArr},
+        {label:'Math',data:mathArr}
+      ]
+    }
+  });
+  document.getElementById('wPhy').innerText=phyArr.reduce((a,b)=>a+b,0);
+  document.getElementById('wChem').innerText=chemArr.reduce((a,b)=>a+b,0);
+  document.getElementById('wMath').innerText=mathArr.reduce((a,b)=>a+b,0);
+  document.getElementById('wSum').innerText=phyArr.reduce((a,b)=>a+b,0)+chemArr.reduce((a,b)=>a+b,0)+mathArr.reduce((a,b)=>a+b,0);
+}
+
+function drawMonthly(){
+  const data = readData(); const now=new Date();
+  const labels=[]; const phyArr=[], chemArr=[], mathArr=[];
+  const daysInMonth=new Date(now.getFullYear(), now.getMonth()+1,0).getDate();
+  for(let i=1;i<=daysInMonth;i++){
+    const d=new Date(now.getFullYear(), now.getMonth(), i);
+    const lab=d.getDate(); labels.push(lab);
+    const key=d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+    const entry=data[key] || {physics:0,chemistry:0,math:0};
+    phyArr.push(entry.physics); chemArr.push(entry.chemistry); mathArr.push(entry.math);
+  }
+  if(monthlyChart) monthlyChart.destroy();
+  monthlyChart=new Chart(document.getElementById('monthlyChart'),{
+    type:'line',
+    data:{ labels:labels,
+      datasets:[
+        {label:'Physics',data:phyArr},
+        {label:'Chemistry',data:chemArr},
+        {label:'Math',data:mathArr}
+      ]
+    }
+  });
+  document.getElementById('mPhy').innerText=phyArr.reduce((a,b)=>a+b,0);
+  document.getElementById('mChem').innerText=chemArr.reduce((a,b)=>a+b,0);
+  document.getElementById('mMath').innerText=mathArr.reduce((a,b)=>a+b,0);
+  document.getElementById('mSum').innerText=phyArr.reduce((a,b)=>a+b,0)+chemArr.reduce((a,b)=>a+b,0)+mathArr.reduce((a,b)=>a+b,0);
+}
+
+/* ---------- Export / Import ---------- */
+function exportCSV(){
+  const data=readData(); let csv="key_date,iso,physics,chemistry,math,total\n";
+  for(let k in data){ const e=data[k]; csv+=`${k},${e.iso},${e.physics},${e.chemistry},${e.math},${e.total}\n`; }
+  const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download="prep_data.csv"; a.click(); URL.revokeObjectURL(url);
+}
+
+function importCSV(event){
+  const file=event.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=(e)=>{
+    const lines=e.target.result.split("\n"); const obj={};
+    lines.slice(1).forEach(line=>{
+      const [key,iso,phy,chem,math,total]=line.split(",");
+      if(key) obj[key]={iso,physics:+phy,chemistry:+chem,math:+math,total:+total};
+    });
+    writeData(obj); updateUI();
+  };
+  reader.readAsText(file);
+}
+
+function resetAll(){
+  if(confirm("Reset all data?")){ localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(BADGES_KEY); updateUI(); alert("All data reset."); }
+}
+
+updateUI();
+</script>
+</body>
+</html>
